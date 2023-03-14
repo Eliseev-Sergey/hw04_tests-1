@@ -3,7 +3,7 @@ from django.urls import reverse
 
 from ..models import Group, Post, User
 
-ONE_POST = 1
+from yatube.variable import *
 
 
 class PostFormTest(TestCase):
