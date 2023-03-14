@@ -5,8 +5,10 @@ from django import forms
 
 from ..models import Group, Post
 
-from yatube.variable import *
-
+TEST_ID = 1
+FIRST_OBJECT = 0
+NUMBER_OF_POSTS = 15
+NUMBER_POSTS_ON_PAGE = 10
 User = get_user_model()
 
 
