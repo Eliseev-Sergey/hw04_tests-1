@@ -23,7 +23,7 @@ class TaskPagesTests(TestCase):
 
         cls.group = Group.objects.create(
             title='Тестовая группа',
-            slug='test_slug',
+            slug='tst_slug',
             description='Тестовое описание',
         )
 
@@ -38,7 +38,7 @@ class TaskPagesTests(TestCase):
         templates_url_names = {
             reverse('posts:index'): 'posts/index.html',
             reverse('posts:group_list',
-                    kwargs={'slug_name': 'test_slug'}): 'posts/group_list.html',
+                    kwargs={'slug_name': 'tst_slug'}): 'posts/group_list.html',
             reverse('posts:profile',
                     kwargs={'username': 'NoName'}): 'posts/profile.html',
             reverse('posts:post_detail',
@@ -63,7 +63,7 @@ class TaskPagesTests(TestCase):
     def test_group_list_context(self):
         """Проверка Group list использует правильные данные в контекст."""
         response = self.authorized_client.get(
-            reverse('posts:group_list', kwargs={'slug_name': 'test_slug'}))
+            reverse('posts:group_list', kwargs={'slug_name': 'tst_slug'}))
         post = Post.objects.select_related(
             'author', 'group').filter(group=self.group)[FIRST_OBJECT]
 
