@@ -5,7 +5,9 @@ from django import forms
 
 from ..models import Group, Post
 
-TEST_ID = 1
+# from yatube.posts.utils import NUMBER_POSTS_ON_PAGE
+
+TEST = 1
 FIRST_OBJECT = 0
 NUMBER_OF_POSTS = 15
 NUMBER_POSTS_ON_PAGE = 10
@@ -42,9 +44,9 @@ class TaskPagesTests(TestCase):
             reverse('posts:profile',
                     kwargs={'username': 'NoName'}): 'posts/profile.html',
             reverse('posts:post_detail',
-                    kwargs={'post_id': TEST_ID}): 'posts/post_detail.html',
+                    kwargs={'post_id': TEST}): 'posts/post_detail.html',
             reverse('posts:post_edit',
-                    kwargs={'post_id': TEST_ID}): 'posts/create_post.html',
+                    kwargs={'post_id': TEST}): 'posts/create_post.html',
             reverse('posts:post_create'): 'posts/create_post.html'
         }
         for address, template in templates_url_names.items():

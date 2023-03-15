@@ -25,6 +25,9 @@ class PostURLTests(TestCase):
             slug='test_slag',
             description='Тестовое описание'
         )
+        cls.user_not_author = User.objects.create(username='NotAuthor')
+        cls.not_author = Client()
+        cls.not_author.force_login(cls.user_not_author)
 
     def test_home_url_exists_at_desired_location(self):
         """Страница / доступна любому пользователю."""
@@ -33,33 +36,66 @@ class PostURLTests(TestCase):
 
     def test_group_url_location(self):
         """Страница / доступна любому пользователю."""
-        resource = self.client.get('/group/test_slag/')
-        self.assertEqual(resource.status_code, 200)
+        response = self.client.get('/group/test_slag/')
+        self.assertEqual(response.status_code, 200)
 
     def test_profile_url_lacation(self):
         """Страница / доступна любому пользователю."""
-        resource = self.client.get('/profile/test_author/')
-        self.assertEqual(resource.status_code, 200)
+        response = self.client.get('/profile/test_author/')
+        self.assertEqual(response.status_code, 200)
 
     def test_post_id_url_location(self):
         """Страница / доступна любому пользователю."""
-        resource = self.client.get(f'/posts/{self.post.id}/')
-        self.assertEqual(resource.status_code, 200)
+        response = self.client.get(f'/posts/{self.post.id}/')
+        self.assertEqual(response.status_code, 200)
 
     def test_edit_url_location(self):
         """Страница / доступна автору поста."""
-        resource = self.authorized_client.get(f'/posts/{self.post.id}/edit/')
-        self.assertEqual(resource.status_code, 200)
+        response = self.authorized_client.get(f'/posts/{self.post.id}/edit/')
+        self.assertEqual(response.status_code, 200)
 
     def test_create_url_location(self):
         """Страница / доступна авторизованому пользователю."""
-        resource = self.authorized_client.get('/create/')
-        self.assertEqual(resource.status_code, 200)
+        response = self.authorized_client.get('/create/')
+        self.assertEqual(response.status_code, 200)
 
     def test_404_url_locations(self):
         """Не доступная страница"""
-        resource = self.client.get('/404/')
-        self.assertEqual(resource.status_code, 404)
+        response = self.client.get('/404/')
+        self.assertEqual(response.status_code, 404)
+
+    def test_create_url_guest(self):
+        """Страница / не доступна не авторизованому пользователю"""
+        response = self.client.get('/create/')
+        self.assertEqual(response.status_code, 302)
+
+    def test_edit_url_guest(self):
+        """Страница / не доступна не авторизованому пользователю"""
+        response = self.client.get(f'/posts/{self.post.id}/edit/')
+        self.assertEqual(response.status_code, 302)
+
+    def test_edit_url_not_author(self):
+        """Страница / не доступна не авторизованому пользователю"""
+        response = self.not_author.get(f'/posts/{self.post.id}/edit/')
+        self.assertEqual(response.status_code, 302)
+
+    def test_edit_url_guest_redirect(self):
+        """Страница / перенаправляет не авторизованого пользователя"""
+        response = self.client.get(f'/posts/{self.post.id}/edit/')
+        self.assertRedirects(response,
+                             f'/auth/login/?next=/posts/{self.post.id}/edit/')
+
+    def test_create_url_guest_redirect(self):
+        """Страница / перенаправляет не авторизованого пользователя"""
+        response = self.client.get(f'/create/')
+        self.assertRedirects(response,
+                             '/auth/login/?next=/create/')
+
+    def test_edit_url_not_author_redirect(self):
+        """Страница / перенаправляет не автора поста"""
+        response = self.not_author.get(f'/posts/{self.post.id}/edit/')
+        self.assertRedirects(response,
+                             f'/posts/{self.post.id}/')
 
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""

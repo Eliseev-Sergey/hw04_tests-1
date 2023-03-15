@@ -1,9 +1,8 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from ..models import Group, Post
+from ..models import Group, Post, User
 
-User = get_user_model()
+WORDS_OUTPUT_LIMIT = 15
 
 
 class PostModelTest(TestCase):
@@ -24,13 +23,15 @@ class PostModelTest(TestCase):
             text='Тестовый пост',
         )
 
-    def test_models_have_correct_object_names(self):
+    def test_models_post_have_correct_object_names(self):
         """Проверяем, что у моделей корректно работает __str__."""
-        post = PostModelTest.post
-        group = PostModelTest.group
+        self.assertEqual(
+            PostModelTest.post.text[:WORDS_OUTPUT_LIMIT],
+            str(PostModelTest.post))
 
-        self.assertEqual(post.text[:15], post.__str__())
-        self.assertEqual(group.title, group.__str__())
+    def test_models_group_have_correct_object_names(self):
+        """Проверяем, что у моделей корректно работает __str__."""
+        self.assertEqual(PostModelTest.group.title, str(PostModelTest.group))
 
     def test_models_verbose_name(self):
         """Проверяем verbose_name в post и group"""
