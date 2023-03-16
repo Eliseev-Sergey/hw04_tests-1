@@ -3,7 +3,7 @@ from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
 
-from ..models import Group, Post
+from ..models import User, Group, Post
 
 # from yatube.posts.utils import NUMBER_POSTS_ON_PAGE
 
@@ -11,7 +11,6 @@ TEST = 1
 FIRST_OBJECT = 0
 NUMBER_OF_POSTS = 15
 NUMBER_POSTS_ON_PAGE = 10
-User = get_user_model()
 
 
 class TaskPagesTests(TestCase):
@@ -57,10 +56,12 @@ class TaskPagesTests(TestCase):
     def test_index_context(self):
         """Index использует правильные данные в контекст."""
         response = self.authorized_client.get(reverse('posts:index'))
-        post = Post.objects.select_related('author').all()[FIRST_OBJECT]
         page_obj = response.context['page_obj'][FIRST_OBJECT]
         self.assertIn('page_obj', response.context)
-        self.assertEqual(page_obj, post)
+        self.assertEqual(page_obj.author, self.post.author)
+        self.assertEqual(page_obj.group, self.post.group)
+        self.assertEqual(page_obj.id, self.post.id)
+        self.assertEqual(page_obj.text, self.post.text)
 
     def test_group_list_context(self):
         """Проверка Group list использует правильные данные в контекст."""
