@@ -19,8 +19,6 @@ class TaskPagesTests(TestCase):
         super().setUpClass()
 
         cls.user = User.objects.create(username='NoName')
-        cls.authorized_client = Client()
-        cls.authorized_client.force_login(cls.user)
 
         cls.group = Group.objects.create(
             title='Тестовая группа',
@@ -33,6 +31,11 @@ class TaskPagesTests(TestCase):
             author=cls.user,
             group=cls.group
         )
+
+    def setUp(self):
+
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
 
     def test_views_template(self):
         """URL используют правильные шаблоны."""
@@ -67,26 +70,26 @@ class TaskPagesTests(TestCase):
         """Проверка Group list использует правильные данные в контекст."""
         response = self.authorized_client.get(
             reverse('posts:group_list', kwargs={'slug_name': 'tst_slug'}))
-        post = Post.objects.select_related(
-            'author', 'group').filter(group=self.group)[FIRST_OBJECT]
 
         page_obj = response.context['page_obj'][FIRST_OBJECT]
 
-        self.assertIn('page_obj', response.context)
-        self.assertIn('group', response.context)
-        self.assertEqual(page_obj, post)
+        self.assertEqual(page_obj, self.post)
+        self.assertEqual(page_obj.author, self.post.author)
+        self.assertEqual(page_obj.group, self.post.group)
+        self.assertEqual(page_obj.id, self.post.id)
+        self.assertEqual(page_obj.text, self.post.text)
 
     def test_profile_context(self):
         """Проверка Profile использует правильный контекст."""
         response = self.authorized_client.get(
             reverse('posts:profile', kwargs={'username': 'NoName'}))
-        post = Post.objects.select_related(
-            'author', 'group').filter(author=self.user)[FIRST_OBJECT]
+
         page_obj = response.context['page_obj'][FIRST_OBJECT]
 
-        self.assertIn('page_obj', response.context)
-        self.assertIn('author', response.context)
-        self.assertEqual(page_obj, post)
+        self.assertEqual(page_obj.author, self.post.author)
+        self.assertEqual(page_obj.group, self.post.group)
+        self.assertEqual(page_obj.id, self.post.id)
+        self.assertEqual(page_obj.text, self.post.text)
 
     def test_post_detail_context(self):
         """Проверка Post detail использует правильный контекст."""

@@ -13,8 +13,6 @@ class PostURLTests(TestCase):
         super().setUpClass()
 
         cls.test_author = User.objects.create_user(username='test_author')
-        cls.authorized_client = Client()
-        cls.authorized_client.force_login(cls.test_author)
 
         cls.post = Post.objects.create(
             text='Текстовый текст',
@@ -26,8 +24,14 @@ class PostURLTests(TestCase):
             description='Тестовое описание'
         )
         cls.user_not_author = User.objects.create(username='NotAuthor')
-        cls.not_author = Client()
-        cls.not_author.force_login(cls.user_not_author)
+
+    def setUp(self):
+
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.test_author)
+
+        self.not_author = Client()
+        self.not_author.force_login(self.user_not_author)
 
     def test_home_url_exists_at_desired_location(self):
         """Страница / доступна любому пользователю."""
