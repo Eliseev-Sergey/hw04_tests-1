@@ -91,7 +91,7 @@ class PostURLTests(TestCase):
 
     def test_create_url_guest_redirect(self):
         """Страница / перенаправляет не авторизованого пользователя"""
-        response = self.client.get(f'/create/')
+        response = self.client.get('/create/')
         self.assertRedirects(response,
                              '/auth/login/?next=/create/')
 

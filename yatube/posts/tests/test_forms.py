@@ -44,7 +44,8 @@ class PostFormTest(TestCase):
         set_ids_before = set(Post.objects.values_list('id', flat=True))
 
         response = self.authorized_client.post(
-            reverse('posts:post_create'), data=self.post_text_form, follow=True)
+            reverse('posts:post_create'),
+            data=self.post_text_form, follow=True)
 
         set_ids_after = set(Post.objects.values_list('id', flat=True))
         id_post = list(set(set_ids_after) - set(set_ids_before))[0]
@@ -86,7 +87,7 @@ class PostFormTest(TestCase):
             'group', 'author').get(pk=self.create_post.id)
 
         self.assertEqual(response_author.status_code, 302)
-        self.assertEqual(edit_post.author,  self.create_post.author)
+        self.assertEqual(edit_post.author, self.create_post.author)
         self.assertEqual(edit_post.text, 'Измененный тект')
         self.assertEqual(edit_post.group.pk, self.second_group.pk)
 
