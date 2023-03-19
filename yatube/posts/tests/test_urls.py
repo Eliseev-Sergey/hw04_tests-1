@@ -1,9 +1,7 @@
-from django.contrib.auth import get_user_model
 from django.test import TestCase, Client
+from django.urls import reverse
 
-from ..models import Group, Post
-
-User = get_user_model()
+from ..models import Group, Post, User
 
 
 class PostURLTests(TestCase):
@@ -24,6 +22,9 @@ class PostURLTests(TestCase):
             description='Тестовое описание'
         )
         cls.user_not_author = User.objects.create(username='NotAuthor')
+        cls.USER_LOG = reverse('users:login')
+        cls.POST_EDIT = reverse('posts:post_edit',
+                                kwargs={'post_id': cls.post.id})
 
     def setUp(self):
 
@@ -87,27 +88,28 @@ class PostURLTests(TestCase):
         """Страница / перенаправляет не авторизованого пользователя"""
         response = self.client.get(f'/posts/{self.post.id}/edit/')
         self.assertRedirects(response,
-                             f'/auth/login/?next=/posts/{self.post.id}/edit/')
+                             self.USER_LOG + '?next=' + self.POST_EDIT)
 
     def test_create_url_guest_redirect(self):
         """Страница / перенаправляет не авторизованого пользователя"""
         response = self.client.get('/create/')
-        self.assertRedirects(response,
-                             '/auth/login/?next=/create/')
+        self.assertRedirects(
+            response, self.USER_LOG + '?next=' + reverse('posts:post_create'))
 
     def test_edit_url_not_author_redirect(self):
         """Страница / перенаправляет не автора поста"""
         response = self.not_author.get(f'/posts/{self.post.id}/edit/')
         self.assertRedirects(response,
-                             f'/posts/{self.post.id}/')
+                             reverse('posts:post_detail',
+                                     kwargs={'post_id': self.post.id}))
 
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
         templates_url_names = {
             f'/posts/{self.post.id}/': 'posts/post_detail.html',
             f'/posts/{self.post.id}/edit/': 'posts/create_post.html',
-            '/group/test_slag/': 'posts/group_list.html',
-            '/profile/test_author/': 'posts/profile.html',
+            f'/group/{self.group.slug}/': 'posts/group_list.html',
+            f'/profile/{self.post.author}/': 'posts/profile.html',
             '/create/': 'posts/create_post.html',
             '/': 'posts/index.html',
         }

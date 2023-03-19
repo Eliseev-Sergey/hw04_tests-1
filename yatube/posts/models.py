@@ -1,10 +1,8 @@
 from django.db import models
-
 from django.contrib.auth import get_user_model
+from django.conf import settings
 
 User = get_user_model()
-
-WORDS_OUTPUT_LIMIT = 15
 
 
 class Post(models.Model):
@@ -36,7 +34,7 @@ class Post(models.Model):
         ordering = ('-pub_date',)
 
     def __str__(self):
-        return self.text[:WORDS_OUTPUT_LIMIT]
+        return self.text[:settings.WORDS_OUTPUT_LIMIT]
 
 
 class Group(models.Model):

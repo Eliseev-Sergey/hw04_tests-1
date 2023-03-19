@@ -1,15 +1,9 @@
 from django.test import Client, TestCase
 from django.urls import reverse
 from django import forms
+from django.conf import settings
 
 from ..models import User, Group, Post
-
-
-TEST_NUM = 1
-FIRST_OBJECT = 0
-NUMBER_OF_POSTS = 15
-NUMBER_POSTS_ON_FIRST_PAGE = 10
-NUMBER_POSTS_ON_SECOND_PAGE = 5
 
 
 class TaskPagesTests(TestCase):
@@ -48,13 +42,17 @@ class TaskPagesTests(TestCase):
         templates_url_names = {
             reverse('posts:index'): 'posts/index.html',
             reverse('posts:group_list',
-                    kwargs={'slug_name': 'tst_slug'}): 'posts/group_list.html',
+                    kwargs={'slug_name': 'tst_slug'}
+                    ): 'posts/group_list.html',
             reverse('posts:profile',
-                    kwargs={'username': 'NoName'}): 'posts/profile.html',
+                    kwargs={'username': 'NoName'}
+                    ): 'posts/profile.html',
             reverse('posts:post_detail',
-                    kwargs={'post_id': TEST_NUM}): 'posts/post_detail.html',
+                    kwargs={'post_id': settings.TEST_NUM}
+                    ): 'posts/post_detail.html',
             reverse('posts:post_edit',
-                    kwargs={'post_id': TEST_NUM}): 'posts/create_post.html',
+                    kwargs={'post_id': settings.TEST_NUM}
+                    ): 'posts/create_post.html',
             reverse('posts:post_create'): 'posts/create_post.html'
         }
         for address, template in templates_url_names.items():
@@ -65,7 +63,7 @@ class TaskPagesTests(TestCase):
     def test_index_context(self):
         """Index использует правильные данные в контекст."""
         response = self.authorized_client.get(reverse('posts:index'))
-        page_obj = response.context['page_obj'][FIRST_OBJECT]
+        page_obj = response.context['page_obj'][settings.FIRST_OBJECT]
 
         self.assertEqual(page_obj.author, self.post.author)
         self.assertEqual(page_obj.group, self.post.group)
@@ -75,28 +73,31 @@ class TaskPagesTests(TestCase):
     def test_group_list_context(self):
         """Проверка Group list использует правильные данные в контекст."""
         response = self.authorized_client.get(
-            reverse('posts:group_list', kwargs={'slug_name': 'tst_slug'}))
+            reverse('posts:group_list', kwargs={'slug_name': self.group.slug}))
 
-        page_obj = response.context['page_obj'][FIRST_OBJECT]
+        page_obj = response.context['page_obj'][settings.FIRST_OBJECT]
+        group_obj = response.context['group']
 
         self.assertEqual(page_obj, self.post)
         self.assertEqual(page_obj.author, self.post.author)
         self.assertEqual(page_obj.group, self.post.group)
         self.assertEqual(page_obj.id, self.post.id)
         self.assertEqual(page_obj.text, self.post.text)
-        self.assertNotEqual(page_obj.group, self.another_group)
+        self.assertEqual(group_obj, self.post.group)
 
     def test_profile_context(self):
         """Проверка Profile использует правильный контекст."""
         response = self.authorized_client.get(
-            reverse('posts:profile', kwargs={'username': 'NoName'}))
+            reverse('posts:profile', kwargs={'username': self.user}))
 
-        page_obj = response.context['page_obj'][FIRST_OBJECT]
+        page_obj = response.context['page_obj'][settings.FIRST_OBJECT]
+        author_obj = response.context['author']
 
         self.assertEqual(page_obj.author, self.post.author)
         self.assertEqual(page_obj.group, self.post.group)
         self.assertEqual(page_obj.id, self.post.id)
         self.assertEqual(page_obj.text, self.post.text)
+        self.assertEqual(author_obj, self.post.author)
 
     def test_post_detail_context(self):
         """Проверка Post detail использует правильный контекст."""
@@ -106,6 +107,10 @@ class TaskPagesTests(TestCase):
         post = response.context['post']
 
         self.assertEqual(post, self.post)
+        self.assertEqual(post.author, self.post.author)
+        self.assertEqual(post.group, self.post.group)
+        self.assertEqual(post.id, self.post.id)
+        self.assertEqual(post.text, self.post.text)
 
     def test_post_create_context(self):
         """Post create page и post_create использует правильный контекст."""
@@ -147,7 +152,7 @@ class TaskPagesTests(TestCase):
 
     def test_post_in_profile_on_first_position(self):
         """Проверка, что пост в profile попадает на первую позицию"""
-        self.test_post = Post.objects.create(
+        test_post = Post.objects.create(
             text='Этот пост должен быть первым',
             author=self.user,
             group=self.group
@@ -155,22 +160,45 @@ class TaskPagesTests(TestCase):
         response = self.authorized_client.get(
             reverse('posts:profile',
                     kwargs={'username': self.user.username}))
-        page_obj = response.context['page_obj'][FIRST_OBJECT]
-        self.assertEqual(self.test_post, page_obj)
-        print(page_obj.text)
+        page_obj = response.context['page_obj'][settings.FIRST_OBJECT]
+        self.assertEqual(test_post, page_obj)
 
     def test_post_in_group_list_on_first_position(self):
         """Проверка, что пост в group_list попадает на первую позицию"""
-        self.test_post = Post.objects.create(
+        test_post = Post.objects.create(
             text='Этот пост должен быть первым в группе',
             author=self.user,
             group=self.group
         )
         response = self.authorized_client.get(
             reverse('posts:group_list',
-                    kwargs={'slug_name': self.test_post.group.slug}))
-        page_obj = response.context['page_obj'][FIRST_OBJECT]
-        self.assertEqual(self.test_post, page_obj)
+                    kwargs={'slug_name': test_post.group.slug}))
+        page_obj = response.context['page_obj'][settings.FIRST_OBJECT]
+        self.assertEqual(test_post, page_obj)
+
+    def test_post_in_index_on_first_position(self):
+        """Проверка, что пост в Index попадает на первую позицию"""
+        test_post = Post.objects.create(
+            text='Этот пост должен быть первым',
+            author=self.user,
+            group=self.group
+        )
+        response = self.client.get(reverse('posts:index', ))
+        page_obj = response.context['page_obj'][settings.FIRST_OBJECT]
+        self.assertEqual(test_post, page_obj)
+
+    def test_new_post_in_right_group(self):
+        """Проверка на то что новый пост не попадает в чужую группу"""
+        test_post = Post.objects.create(
+            text='Этот пост не должен попасть в группу group',
+            author=self.user,
+            group=self.another_group
+        )
+        response = self.client.get(
+            reverse('posts:group_list',
+                    kwargs={'slug_name': self.group.slug}))
+        page_obj = response.context['page_obj'][settings.FIRST_OBJECT]
+        self.assertNotEqual(test_post, page_obj)
 
 
 class PaginatorViewTest(TestCase):
@@ -179,8 +207,6 @@ class PaginatorViewTest(TestCase):
         super().setUpClass()
 
         cls.user = User.objects.create(username='NoName')
-        cls.authorized_client = Client()
-        cls.authorized_client.force_login(cls.user)
 
         cls.group = Group.objects.create(
             title='Тестовая группа',
@@ -188,24 +214,27 @@ class PaginatorViewTest(TestCase):
             description='Тестовое описание',
         )
 
-        for page in range(NUMBER_OF_POSTS):
+        for page in range(settings.NUMBER_OF_POSTS):
             Post.objects.create(
                 text=f'Test text №{page}',
                 author=cls.user,
                 group=cls.group,
             )
 
+    def setUp(self):
+        self.authorized_client = Client()
+        self.authorized_client.force_login(self.user)
+
     def test_paginator_first_page(self):
         """Проверка корректной работы paginator."""
-        list_of_check_page = ['/', '/group/test_slug/', '/profile/NoName/']
+        list_of_check_page = ['/', f'/group/{self.group.slug}/',
+                              f'/profile/{self.user}/']
         list_of_paginator_page = [('?page=1',
-                                   NUMBER_POSTS_ON_FIRST_PAGE),
+                                   settings.NUMBER_POSTS_ON_FIRST_PAGE),
                                   ('?page=2',
-                                   NUMBER_POSTS_ON_SECOND_PAGE)]
+                                   settings.NUMBER_POSTS_ON_SECOND_PAGE)]
         for page in list_of_check_page:
-            with self.subTest(adress=page):
-                for pag in list_of_paginator_page:
-                    with self.subTest(adress=pag):
-                        response = self.client.get(page + pag[0])
-                        self.assertEqual(
-                            len(response.context['page_obj']), pag[1])
+            for pag in list_of_paginator_page:
+                with self.subTest(adress=pag):
+                    response = self.client.get(page + pag[0])
+                    self.assertEqual(len(response.context['page_obj']), pag[1])

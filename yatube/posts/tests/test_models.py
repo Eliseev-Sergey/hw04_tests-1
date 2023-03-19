@@ -1,8 +1,7 @@
 from django.test import TestCase
+from django.conf import settings
 
 from ..models import Group, Post, User
-
-WORDS_OUTPUT_LIMIT = 15
 
 
 class PostModelTest(TestCase):
@@ -20,13 +19,13 @@ class PostModelTest(TestCase):
 
         cls.post = Post.objects.create(
             author=cls.user,
-            text='Тестовый пост',
+            text='Тестовый пост, Тестовый пост, Тестовый пост, Тестовый пост',
         )
 
     def test_models_post_have_correct_object_names(self):
         """Проверяем, что у моделей корректно работает __str__."""
         self.assertEqual(
-            PostModelTest.post.text[:WORDS_OUTPUT_LIMIT],
+            PostModelTest.post.text[:settings.WORDS_OUTPUT_LIMIT],
             str(PostModelTest.post))
 
     def test_models_group_have_correct_object_names(self):
