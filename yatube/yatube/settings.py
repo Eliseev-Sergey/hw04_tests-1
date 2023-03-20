@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'posts.apps.PostsConfig',
-    'about.apps.AboutConfig'
+    'about.apps.AboutConfig',
+    'sorl.thumbnail',
 ]
 
 MIDDLEWARE = [
@@ -140,3 +141,7 @@ NUMBER_OF_POSTS = 15
 NUMBER_POSTS_ON_FIRST_PAGE = 10
 NUMBER_POSTS_ON_SECOND_PAGE = 5
 ONE_POST = 1
+
+CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
+MEDIA_URL = '/media/'
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
