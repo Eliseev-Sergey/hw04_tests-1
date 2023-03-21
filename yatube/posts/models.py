@@ -52,3 +52,32 @@ class Group(models.Model):
 
     def __str__(self):
         return self.title
+
+
+class Comment(models.Model):
+    post = models.ForeignKey(
+        Post,
+        blank=True,
+        null=True,
+        on_delete=models.CASCADE,
+        related_name='Comments',
+        verbose_name='Комент',
+        help_text='Пост к которому относится коментрарий'
+    )
+    author = models.ForeignKey(
+        User,
+        on_delete=models.CASCADE,
+        related_name='Comments',
+        verbose_name='Автор комментария'
+    )
+    text = models.TextField(
+        'Текст комментария',
+        help_text='Введите текст коментария'
+    )
+
+    created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name = 'Комментарий'
+        verbose_name_plural = 'Комментарии',
+        ordering = ('-created',)

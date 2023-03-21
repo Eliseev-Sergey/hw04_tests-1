@@ -1,10 +1,17 @@
-from django.test import Client, TestCase
+import shutil
+import tempfile
+
+from django.test import Client, override_settings, TestCase
 from django.urls import reverse
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from ..models import Group, Post, User
 
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class PostFormTest(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -28,12 +35,36 @@ class PostFormTest(TestCase):
             group=cls.group
         )
 
-        cls.post_text_form = {'text': 'Измененный тект', 'group': cls.group.pk}
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
+
+        cls.post_text_form = {'text': 'Измененный тект',
+                              'group': cls.group.pk,
+                              'image': uploaded,
+                              }
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def setUp(self):
 
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+
 
     def test_create_post_by_user(self):
         """Работа формы зарегистрирванного пользователя"""
@@ -45,14 +76,14 @@ class PostFormTest(TestCase):
             data=self.post_text_form, follow=True)
 
         set_ids_after = set(Post.objects.values_list('id', flat=True))
-        if len([set_ids_after]) == settings.ONE_POST:
-            id_post = list(set(set_ids_after) - set(set_ids_before))[0]
-        else:
-            print('Новых постов больше одного')
-        post = Post.objects.select_related('group', 'author').get(pk=id_post)
 
+        self.assertEqual(len([set_ids_after]), settings.ONE_POST)
+
+        id_post = list(set(set_ids_after) - set(set_ids_before))[0]
+        post = Post.objects.select_related('group', 'author').get(pk=id_post)
         self.assertEqual(self.post_text_form['text'], post.text)
         self.assertEqual(self.post_text_form['group'], post.group.pk)
+        self.assertEqual(f'posts/{self.post_text_form["image"]}', post.image)
         self.assertEqual(self.user, post.author)
         self.assertEqual(response.status_code, 200)
 

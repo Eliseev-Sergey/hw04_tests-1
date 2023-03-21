@@ -1,11 +1,18 @@
-from django.test import Client, TestCase
+import shutil
+import tempfile
+
+from django.test import Client, override_settings, TestCase
 from django.urls import reverse
 from django import forms
 from django.conf import settings
+from django.core.files.uploadedfile import SimpleUploadedFile
 
 from ..models import User, Group, Post
 
+TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
+
+@override_settings(MEDIA_ROOT=TEMP_MEDIA_ROOT)
 class TaskPagesTests(TestCase):
     @classmethod
     def setUpClass(cls):
@@ -13,6 +20,21 @@ class TaskPagesTests(TestCase):
 
         cls.user = User.objects.create(username='NoName')
         cls.another_user = User.objects.create(username='AnotherName')
+
+        small_gif = (
+            b'\x47\x49\x46\x38\x39\x61\x02\x00'
+            b'\x01\x00\x80\x00\x00\x00\x00\x00'
+            b'\xFF\xFF\xFF\x21\xF9\x04\x00\x00'
+            b'\x00\x00\x00\x2C\x00\x00\x00\x00'
+            b'\x02\x00\x01\x00\x00\x02\x02\x0C'
+            b'\x0A\x00\x3B'
+        )
+
+        uploaded = SimpleUploadedFile(
+            name='small.gif',
+            content=small_gif,
+            content_type='image/gif'
+        )
 
         cls.another_group = Group.objects.create(
             title='Другая группа',
@@ -29,7 +51,8 @@ class TaskPagesTests(TestCase):
         cls.post = Post.objects.create(
             text='Тестовый текст',
             author=cls.user,
-            group=cls.group
+            group=cls.group,
+            image=uploaded,
         )
 
     def setUp(self):
@@ -69,6 +92,7 @@ class TaskPagesTests(TestCase):
         self.assertEqual(page_obj.group, self.post.group)
         self.assertEqual(page_obj.id, self.post.id)
         self.assertEqual(page_obj.text, self.post.text)
+        self.assertEqual(page_obj.image, self.post.image)
 
     def test_group_list_context(self):
         """Проверка Group list использует правильные данные в контекст."""
@@ -84,6 +108,7 @@ class TaskPagesTests(TestCase):
         self.assertEqual(page_obj.id, self.post.id)
         self.assertEqual(page_obj.text, self.post.text)
         self.assertEqual(group_obj, self.post.group)
+        self.assertEqual(page_obj.image, self.post.image)
 
     def test_profile_context(self):
         """Проверка Profile использует правильный контекст."""
@@ -98,6 +123,7 @@ class TaskPagesTests(TestCase):
         self.assertEqual(page_obj.id, self.post.id)
         self.assertEqual(page_obj.text, self.post.text)
         self.assertEqual(author_obj, self.post.author)
+        self.assertEqual(page_obj.image, self.post.image)
 
     def test_post_detail_context(self):
         """Проверка Post detail использует правильный контекст."""
@@ -111,6 +137,7 @@ class TaskPagesTests(TestCase):
         self.assertEqual(post.group, self.post.group)
         self.assertEqual(post.id, self.post.id)
         self.assertEqual(post.text, self.post.text)
+        self.assertEqual(post.image, self.post.image)
 
     def test_post_create_context(self):
         """Post create page и post_create использует правильный контекст."""
