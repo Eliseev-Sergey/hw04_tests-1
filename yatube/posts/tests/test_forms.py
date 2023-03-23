@@ -6,7 +6,7 @@ from django.urls import reverse
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from ..models import Group, Post, User
+from ..models import Comment, Group, Post, User
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -64,7 +64,6 @@ class PostFormTest(TestCase):
 
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
-
 
     def test_create_post_by_user(self):
         """Работа формы зарегистрирванного пользователя"""
@@ -134,3 +133,33 @@ class PostFormTest(TestCase):
         self.assertEqual(edit_post.author, self.create_post.author)
         self.assertEqual(edit_post.text, 'Some Text')
         self.assertEqual(edit_post.group.pk, self.group.pk)
+
+    def test_add_comment_post_detail_authorized(self):
+        """Изменение комментария зарегистрированым пользователем"""
+
+        comment_form = {'text': 'Hi! Comment.'}
+
+        num_comment_before = Comment.objects.count()
+
+        self.authorized_client.post(
+            reverse('posts:add_comment',
+                    kwargs={'post_id': self.create_post.id}),
+            data=comment_form)
+        num_comment_after = Comment.objects.count()
+        self.assertEqual(Comment.objects.first().text, comment_form['text'])
+        self.assertEqual(num_comment_after,
+                         num_comment_before + settings.ONE_POST)
+
+    def test_add_comment_post_detail_clien(self):
+        """Изменение комментария не зарегистрированым пользователем"""
+
+        comment_form = {'text': 'Hi! Comment.'}
+
+        num_comment_before = Comment.objects.count()
+
+        self.client.post(
+            reverse('posts:add_comment',
+                    kwargs={'post_id': self.create_post.id}),
+            data=comment_form)
+        num_comment_after = Comment.objects.count()
+        self.assertEqual(num_comment_after, num_comment_before)
