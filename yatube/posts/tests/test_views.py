@@ -1,5 +1,6 @@
-import shutil
 import tempfile
+from time import sleep
+import shutil
 
 from django.test import Client, override_settings, TestCase
 from django.urls import reverse
@@ -59,6 +60,11 @@ class TaskPagesTests(TestCase):
 
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+
+    @classmethod
+    def tearDownClass(cls):
+        super().tearDownClass()
+        shutil.rmtree(TEMP_MEDIA_ROOT, ignore_errors=True)
 
     def test_views_template(self):
         """URL используют правильные шаблоны."""
@@ -226,6 +232,18 @@ class TaskPagesTests(TestCase):
                     kwargs={'slug_name': self.group.slug}))
         page_obj = response.context['page_obj'][settings.FIRST_OBJECT]
         self.assertNotEqual(test_post, page_obj)
+
+    def test_index_cache(self):
+        cache = self.client.get(reverse('posts:index')).content
+        Post.objects.create(
+            text='Текст для проверки кэша',
+            author=self.user
+        )
+        cache_before_20sec = self.client.get(reverse('posts:index')).content
+        self.assertEqual(cache, cache_before_20sec)
+        sleep(settings.CACHE_SAVE_TIME)
+        cache_after_20sec = self.client.get(reverse('posts:index')).content
+        self.assertNotEqual(cache, cache_after_20sec)
 
 
 class PaginatorViewTest(TestCase):

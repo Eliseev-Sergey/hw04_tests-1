@@ -134,6 +134,12 @@ EMAIL_BACKEND = 'django.core.mail.backends.filebased.EmailBackend'
 # указываем директорию, в которую будут складываться файлы писем
 EMAIL_FILE_PATH = os.path.join(BASE_DIR, 'sent_emails')
 
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+    }
+}
+
 WORDS_OUTPUT_LIMIT = 15
 TEST_NUM = 1
 FIRST_OBJECT = 0
@@ -141,6 +147,7 @@ NUMBER_OF_POSTS = 15
 NUMBER_POSTS_ON_FIRST_PAGE = 10
 NUMBER_POSTS_ON_SECOND_PAGE = 5
 ONE_POST = 1
+CACHE_SAVE_TIME = 4.1
 
 CSRF_FAILURE_VIEW = 'core.views.csrf_failure'
 MEDIA_URL = '/media/'
