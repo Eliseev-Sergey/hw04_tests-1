@@ -1,8 +1,8 @@
 from django.contrib.auth.decorators import login_required
 from django.shortcuts import get_object_or_404, redirect, render
 
-from .models import Group, Post, User, Comment
-from .forms import PostForm, CommentForm
+from .models import Comment, Follow, Group, Post, User
+from .forms import CommentForm, PostForm
 from .utils import get_page
 
 
@@ -104,3 +104,26 @@ def add_comment(request, post_id):
         comment.post = post
         comment.save()
     return redirect('posts:post_detail', post_id=post_id)
+
+
+@login_required
+def follow_index(request):
+    posts = Post.objects.select_related(
+        'author').filter(author__following__user=request.user)
+    context = {'page_obj': get_page(request, posts),}
+    return render(request, 'posts/follow.html', context)
+
+
+@login_required
+def profile_follow(request, username):
+    if username != request.user.username:
+        author = get_object_or_404(User, username=username)
+        Follow.objects.get_or_create(user=request.user, aauthor=author)
+    return redirect('posts:profile', username=username)
+
+
+@login_required
+def profile_unfollow(request, username):
+    get_object_or_404(
+        Follow, author_username=username, user=request.user).delete()
+    return render(request, 'posts:pofile', username=username)
