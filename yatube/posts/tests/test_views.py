@@ -287,7 +287,7 @@ class TaskPagesTests(TestCase):
         self.authorized_client.get(
             reverse('posts:profile_follow',
                     kwargs={'username': self.another_user.username}))
-        post = Post.objects.create(
+        Post.objects.create(
             text='пост для подписчика',
             author=self.another_user,
             group=self.another_group
