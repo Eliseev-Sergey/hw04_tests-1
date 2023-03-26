@@ -8,7 +8,7 @@ from django import forms
 from django.conf import settings
 from django.core.files.uploadedfile import SimpleUploadedFile
 
-from ..models import User, Group, Post
+from ..models import Follow, Group, Post, User
 
 TEMP_MEDIA_ROOT = tempfile.mkdtemp(dir=settings.BASE_DIR)
 
@@ -21,7 +21,7 @@ class TaskPagesTests(TestCase):
 
         cls.user = User.objects.create(username='NoName')
         cls.another_user = User.objects.create(username='AnotherName')
-
+        cls.follow_user = User.objects.create(username='followerUser')
         small_gif = (
             b'\x47\x49\x46\x38\x39\x61\x02\x00'
             b'\x01\x00\x80\x00\x00\x00\x00\x00'
@@ -60,6 +60,12 @@ class TaskPagesTests(TestCase):
 
         self.authorized_client = Client()
         self.authorized_client.force_login(self.user)
+
+        self.follow_client = Client()
+        self.follow_client.force_login(self.follow_user)
+
+        self.another = Client()
+        self.another.force_login(self.another_user)
 
     @classmethod
     def tearDownClass(cls):
@@ -244,6 +250,53 @@ class TaskPagesTests(TestCase):
         sleep(settings.CACHE_SAVE_TIME)
         cache_after_20sec = self.client.get(reverse('posts:index')).content
         self.assertNotEqual(cache, cache_after_20sec)
+
+    def test_authorized_user_follow(self):
+        """Авториз. пользователь может подписаться на автора и отписаться"""
+
+        fol_num_before = Follow.objects.count()
+        self.authorized_client.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.another_user.username}))
+        fol_num_after = Follow.objects.count()
+        self.assertEqual(fol_num_after, fol_num_before + settings.ONE_POST)
+        self.authorized_client.get(
+            reverse('posts:profile_unfollow',
+                    kwargs={'username': self.another_user.username}))
+        fol_num_after_unfol = Follow.objects.count()
+        self.assertEqual(fol_num_after_unfol, fol_num_after - settings.ONE_POST)
+
+    def test_new_post_follower(self):
+        """Пост появляется в ленте подписчика"""
+        self.authorized_client.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.another_user.username}))
+        post = Post.objects.create(
+            text='пост для подписчика',
+            author=self.another_user,
+            group=self.another_group
+        )
+        response = self.authorized_client.get(
+            reverse('posts:follow_index'))
+        print(response.context['page_obj'][0].author, post.text)
+        self.assertEqual(post,
+                         response.context['page_obj'][settings.FIRST_OBJECT])
+
+    def test_new_post_not_follower(self):
+        """Пост не появляется в ленте не подписчика"""
+        self.authorized_client.get(
+            reverse('posts:profile_follow',
+                    kwargs={'username': self.another_user.username}))
+        post = Post.objects.create(
+            text='пост для подписчика',
+            author=self.another_user,
+            group=self.another_group
+        )
+        response = self.follow_client.get(
+            reverse('posts:follow_index'))
+        print(len(response.context['page_obj']))
+        self.assertEqual(len(response.context['page_obj']),
+                         settings.NOTING_IN_FOLLOW_INDEX)
 
 
 class PaginatorViewTest(TestCase):

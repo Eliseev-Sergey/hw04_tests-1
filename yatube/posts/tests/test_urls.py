@@ -103,6 +103,16 @@ class PostURLTests(TestCase):
                              reverse('posts:post_detail',
                                      kwargs={'post_id': self.post.id}))
 
+    def test_follow_url_authorized(self):
+        """Страница перенаправляет на избраных авторов зарег. польз."""
+        response = self.authorized_client.get('/follow/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_follow_url_not_authorized(self):
+        """Страница не перенаправляет не зарег. польз."""
+        response = self.client.get('/follow/')
+        self.assertRedirects(response, self.USER_LOG + '?next=/follow/')
+
     def test_urls_uses_correct_template(self):
         """URL-адрес использует соответствующий шаблон."""
         templates_url_names = {
@@ -112,6 +122,7 @@ class PostURLTests(TestCase):
             f'/profile/{self.post.author}/': 'posts/profile.html',
             '/create/': 'posts/create_post.html',
             '/': 'posts/index.html',
+            '/follow/': 'posts/follow.html',
         }
         for address, template in templates_url_names.items():
             with self.subTest(address=address):
